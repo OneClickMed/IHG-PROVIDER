@@ -1,8 +1,9 @@
 // src/lib/api-client.ts 
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import NextAuth from 'next-auth';
 import { getSession, signOut } from 'next-auth/react';
 
-const API_BASE_URL = 'http://localhost:8000/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
