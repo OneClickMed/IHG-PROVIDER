@@ -5,6 +5,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useProviderProfile } from '@/hooks/useProviderProfile';
 import {
   Home,
   Users,
@@ -26,11 +27,13 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { data: profile } = useProviderProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [greeting, setGreeting] = useState('');
   const displayName = session?.user?.name || session?.user?.email || '';
   const logoUrl = session?.user?.logoUrl || null;
+  const unreadCount = profile?.unread_notifications_count || 0;
 
 
   // Update time and greeting
@@ -195,13 +198,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
             <div className="flex items-center gap-2 sm:gap-4">
               {/* Notification Bell */}
-              <button 
+              <Link
+                href="/dashboard/notifications"
                 className="relative p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
                 aria-label="Notifications"
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-[#005994] rounded-full"></span>
-              </button>
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-[#005994] rounded-full">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </Link>
 
  
 

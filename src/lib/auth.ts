@@ -10,7 +10,11 @@ async function refreshAccessToken(token: any) {
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/token/refresh/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-App-Source': 'provider-app',
+        'ngrok-skip-browser-warning': 'true', // Required for ngrok free tier
+      },
       body: JSON.stringify({ refresh: token.refreshToken }),
     });
 
@@ -125,6 +129,8 @@ export const authOptions: NextAuthOptions = {
           {
             headers: {
               Authorization: `Bearer ${token.accessToken}`,
+              'X-App-Source': 'provider-app',
+              'ngrok-skip-browser-warning': 'true', // Required for ngrok free tier
             },
           }
         );

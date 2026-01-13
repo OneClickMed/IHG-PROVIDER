@@ -169,40 +169,36 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button className="p-2 hover:bg-gray-100 rounded-lg">
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <h1 className="text-2xl font-semibold text-gray-900">Appointments</h1>
-        </div>
+{/* Header */}
+<div className="flex items-center justify-between gap-6">
+  {/* Left */}
+  <div className="flex items-center gap-4 shrink-0">
+    <button className="p-2 hover:bg-gray-100 rounded-lg">
+      <ChevronLeft className="w-5 h-5 text-gray-600" />
+    </button>
+    <h1 className="text-2xl font-semibold text-gray-900">
+      Appointments
+    </h1>
+  </div>
 
-        <div className="flex items-center gap-3">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005994] focus:border-transparent"
-            />
-          </div>
+  {/* Right / Search */}
+  <div className="flex flex-1 justify-end">
+    <div className="relative w-full max-w-lg">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <input
+        type="text"
+        placeholder="Search appointments…"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg
+                   focus:outline-none focus:ring-2 focus:ring-[#005994]
+                   focus:border-transparent"
+      />
+    </div>
+  </div>
+</div>
 
-          {/* Filters Button */}
-          <button className="px-4 py-2 border border-[#005994] text-[#005994] rounded-lg hover:bg-blue-50 flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filters
-          </button>
 
-          {/* Edit Availability Button */}
-          <button className="px-4 py-2 bg-[#005994] text-white rounded-lg hover:bg-[#004a7a]">
-            Edit Availability
-          </button>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="bg-white border border-gray-200 rounded-lg ">

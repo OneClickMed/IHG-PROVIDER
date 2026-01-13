@@ -532,14 +532,14 @@ export default function ServicesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {filteredServices.length === 0 ? (
+                {filteredServices?.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-4 py-12 text-center text-gray-500">
                       No services found
                     </td>
                   </tr>
                 ) : (
-                  filteredServices.map((service, index) => (
+                  filteredServices?.map((service, index) => (
                     <tr key={service.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                         {startIndex + index}.

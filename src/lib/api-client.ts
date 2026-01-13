@@ -2,12 +2,14 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getSession, signOut } from 'next-auth/react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+const API_BASE_URL = 'http://localhost:8000/api'
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'X-App-Source': 'provider-app',
+    'ngrok-skip-browser-warning': 'true', // Required for ngrok free tier
   },
 });
 
@@ -17,7 +19,7 @@ apiClient.interceptors.request.use(
     try {
       // Get the NextAuth session (works both client and server side)
       const session = await getSession();
-      
+
       if (session?.accessToken) {
         config.headers.Authorization = `Bearer ${session.accessToken}`;
         // console.log('🔑 [API Client] Auth token added to:', config.url);
@@ -27,7 +29,7 @@ apiClient.interceptors.request.use(
     } catch (error) {
       // console.error('❌ [API Client] Error getting session:', error);
     }
-    
+
     return config;
   },
   (error) => {
@@ -44,12 +46,14 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    
-    // console.error('❌ [API Client] Response error:', {
-    //   url: originalRequest?.url,
-    //   status: error.response?.status,
-    //   data: error.response?.data,
-    // });
+
+    /*
+    console.error('❌ [API Client] Response error:', {
+      url: originalRequest?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    */
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401) {
@@ -70,6 +74,11 @@ apiClient.interceptors.response.use(
           // Try to refresh the token
           const response = await axios.post(`${API_BASE_URL}/token/refresh/`, {
             refresh: session.refreshToken,
+          }, {
+            headers: {
+              'X-App-Source': 'provider-app',
+              'ngrok-skip-browser-warning': 'true', // Required for ngrok free tier
+            },
           });
 
           const { access } = response.data;

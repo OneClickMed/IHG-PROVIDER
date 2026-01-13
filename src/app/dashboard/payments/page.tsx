@@ -84,7 +84,7 @@ const TransactionRow = ({ transaction }: { transaction: Transaction }) => {
           {config.label}
         </span>
       </td>
-      <td className="px-4 py-3 text-sm text-gray-600">{transaction.reference}</td>
+      <td className="px-4 py-3">{transaction.withdrawal ? 'Yes' : 'No'}</td>
       <td className="px-4 py-3">
         <button className="text-primary hover:text-underline text-sm font-medium">
           View details
@@ -94,23 +94,35 @@ const TransactionRow = ({ transaction }: { transaction: Transaction }) => {
   );
 };
 
-// Withdrawal Row Component
+
+
+// Withdrawal Row Component - Fixed version
 const WithdrawalRow = ({ withdrawal }: { withdrawal: Withdrawal }) => {
   const statusConfig = {
-    completed: { bg: 'bg-green-100', text: 'text-green-700', label: 'Completed', icon: CheckCircle },
-    pending: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending', icon: Clock },
-    failed: { bg: 'bg-red-100', text: 'text-red-700', label: 'Failed', icon: XCircle },
+    COMPLETED: { bg: 'bg-green-100', text: 'text-green-700', label: 'Completed', icon: CheckCircle },
+    PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending', icon: Clock },
+    FAILED: { bg: 'bg-red-100', text: 'text-red-700', label: 'Failed', icon: XCircle },
   };
 
-  const config = statusConfig[withdrawal.status];
+  // Safely get the config with a fallback to pending
+  const config = statusConfig[withdrawal.status as keyof typeof statusConfig] || statusConfig.PENDING;
   const StatusIcon = config.icon;
+  const createdAt = new Date(withdrawal.created_at);
+  const dateLabel = createdAt.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+  const timeLabel = createdAt.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   return (
     <tr className="border-b border-gray-200 hover:bg-gray-50">
-      <td className="px-4 py-3 text-sm text-gray-900">{withdrawal.id}</td>
-      <td className="px-4 py-3 text-sm text-gray-900">{withdrawal.bank}</td>
-      <td className="px-4 py-3 text-sm text-gray-600">{withdrawal.date}</td>
-      <td className="px-4 py-3 text-sm text-gray-600">{withdrawal.time}</td>
+      <td className="px-4 py-3 text-sm text-gray-900">{withdrawal.reference}</td>
+      <td className="px-4 py-3 text-sm text-gray-600">{dateLabel}</td>
+      <td className="px-4 py-3 text-sm text-gray-600">{timeLabel}</td>
       <td className="px-4 py-3 text-sm font-medium text-gray-900">₦{withdrawal.amount.toLocaleString()}</td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
@@ -128,6 +140,10 @@ const WithdrawalRow = ({ withdrawal }: { withdrawal: Withdrawal }) => {
     </tr>
   );
 };
+
+
+
+
 
 
 // Error State Component
@@ -165,18 +181,12 @@ export default function PaymentAnalyticsPage() {
   }
 
   const quickLinks = [
-    { 
-      icon: Wallet, 
-      label: 'Earning Breakdown', 
-      description: 'View detailed income sources',
-      href: '/dashboard/payments/earnings',
-      color: 'bg-[#005994]'
-    },
+
     { 
       icon: Activity, 
       label: 'Withdrawal History', 
       description: 'Track all withdrawal transactions',
-      href: '/dashboard/payments/withdrawals',
+      href: '/dashboard/payments/withdraw',
       color: 'bg-[#005994]'
     },
     { 
@@ -213,7 +223,7 @@ export default function PaymentAnalyticsPage() {
             <option value={90}>Last 90 days</option>
             <option value={365}>Last year</option>
           </select>
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary">
+          <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary hidden">
             <Download className="w-4 h-4" />
             <span className="text-sm">Export Report</span>
           </button>
@@ -227,15 +237,14 @@ export default function PaymentAnalyticsPage() {
           {/* Current Wallet Balance - Featured Card */}
           <div className="bg-primary rounded-lg p-6 text-white shadow-lg">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium bg-green-500 text-white px-3 py-1 rounded-full">
+              <span className="text-sm font-medium bg-green-500 text-white px-3 py-1 rounded-full hidden">
                 Current Wallet Balance
               </span>
-              <span className="text-xs opacity-90">Updated now</span>
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-4xl font-bold mb-2">₦ {data.current_wallet_balance.toLocaleString()}</p>
-                <p className="text-sm opacity-90">Available for withdrawal</p>
+                <p className="text-4xl font-bold mb-2">₦ {(data.current_wallet_balance ?? 0).toLocaleString()}</p>
+                <p className="text-sm opacity-90">Total Earnings before Fees</p>
               </div>
               <Link
                 href="/dashboard/payments/withdraw"
@@ -257,9 +266,9 @@ export default function PaymentAnalyticsPage() {
                 <div>
                   <p className="text-xs text-gray-600 uppercase tracking-wide">Total Income</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-gray-900">₦ {data.total_income.toLocaleString()}</span>
+                    <span className="text-2xl font-bold text-gray-900">₦ {(data.total_income ?? 0).toLocaleString()}</span>
                     <span className="text-xs text-green-600 font-medium">
-                      {formatChange(data.finance_analytics.growth_rate)}
+                      {formatChange(data.finance_analytics?.growth_rate ?? 0)}
                     </span>
                   </div>
                 </div>
@@ -275,7 +284,7 @@ export default function PaymentAnalyticsPage() {
                 <div>
                   <p className="text-xs text-gray-600 uppercase tracking-wide">Total Withdrawals</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-gray-900">₦ {data.total_withdrawals.toLocaleString()}</span>
+                    <span className="text-2xl font-bold text-gray-900">₦ {(data.total_withdrawals ?? 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -301,7 +310,7 @@ export default function PaymentAnalyticsPage() {
 
             {/* Bar Chart */}
             <div className="relative h-64">
-              {data.daily_finance.length > 0 ? (
+              {data.daily_finance?.length > 0 ? (
                 <div className="absolute inset-0 flex items-end justify-around gap-2 pb-8">
                   {data.daily_finance.map((day, index) => {
                     const maxValue = Math.max(
@@ -357,30 +366,30 @@ export default function PaymentAnalyticsPage() {
             <StatCard
               icon={CheckCircle}
               label="Successful"
-              value={data.successful_transactions}
-              change={formatChange(data.finance_analytics.growth_rate)}
-              changeType={data.finance_analytics.growth_rate >= 0 ? 'up' : 'down'}
+              value={data.successful_transactions ?? 0}
+              change={formatChange(data.finance_analytics?.growth_rate ?? 0)}
+              changeType={(data.finance_analytics?.growth_rate ?? 0) >= 0 ? 'up' : 'down'}
               iconBgColor="bg-green-100"
               iconColor="text-green-600"
             />
             <StatCard
               icon={Clock}
               label="Pending"
-              value={`₦${(data.pending_amount / 1000).toFixed(0)}K`}
+              value={`₦${((data.pending_amount ?? 0) / 1000).toFixed(0)}K`}
               iconBgColor="bg-yellow-100"
               iconColor="text-yellow-600"
             />
             <StatCard
               icon={XCircle}
               label="Failed"
-              value={data.failed_transactions}
+              value={data.failed_transactions ?? 0}
               iconBgColor="bg-red-100"
               iconColor="text-red-600"
             />
             <StatCard
               icon={Users}
               label="Customers"
-              value={data.total_customers}
+              value={data.total_customers ?? 0}
               iconBgColor="bg-purple-100"
               iconColor="text-purple-600"
             />
@@ -414,7 +423,7 @@ export default function PaymentAnalyticsPage() {
             </div>
 
             <div className="overflow-x-auto">
-              {data.recent_transactions.length > 0 ? (
+              {data.recent_transactions?.length > 0 ? (
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
@@ -424,7 +433,7 @@ export default function PaymentAnalyticsPage() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Date</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Time</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Reference</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">WithDrawal Status</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
                     </tr>
                   </thead>
@@ -448,17 +457,17 @@ export default function PaymentAnalyticsPage() {
               )}
             </div>
 
-            {data.recent_transactions.length > 0 && (
+            {(data.recent_transactions?.length ?? 0) > 0 && (
               <div className="p-4 border-t border-gray-200 flex items-center justify-between">
                 <p className="text-sm text-gray-600">
-                  Showing {data.recent_transactions.length} of {data.total_transactions} transactions
+                  Showing {data.recent_transactions?.length ?? 0} of {data.total_transactions ?? 0} transactions
                 </p>
               </div>
             )}
           </div>
 
           {/* Withdrawal History Table */}
-          {data.withdrawal_history.length > 0 && (
+          {(data.withdrawal_history?.length ?? 0) > 0 && (
             <div className="bg-white rounded-lg border border-gray-200">
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
@@ -466,9 +475,11 @@ export default function PaymentAnalyticsPage() {
                     <h2 className="text-lg font-semibold text-gray-900">Withdrawal History</h2>
                     <p className="text-sm text-gray-600 mt-1">View all your withdrawal transactions</p>
                   </div>
-                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+
+
+                  <Link href="/dashboard/withdraw" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                     View All
-                  </button>
+                  </Link>
                 </div>
               </div>
 
@@ -476,8 +487,7 @@ export default function PaymentAnalyticsPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">S/N</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Bank Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Ref.</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Date</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Time</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Amount</th>
@@ -551,7 +561,7 @@ export default function PaymentAnalyticsPage() {
                   fill="none"
                   stroke="#2563eb"
                   strokeWidth="20"
-                  strokeDasharray={`${data.finance_analytics.income_percentage * 2.51} 251.2`}
+                  strokeDasharray={`${(data.finance_analytics?.income_percentage ?? 0) * 2.51} 251.2`}
                   strokeLinecap="round"
                 />
                 {/* Withdrawal arc (green) */}
@@ -562,15 +572,15 @@ export default function PaymentAnalyticsPage() {
                   fill="none"
                   stroke="#22c55e"
                   strokeWidth="20"
-                  strokeDasharray={`${data.finance_analytics.withdrawal_percentage * 2.51} 251.2`}
-                  strokeDashoffset={`-${data.finance_analytics.income_percentage * 2.51}`}
+                  strokeDasharray={`${(data.finance_analytics?.withdrawal_percentage ?? 0) * 2.51} 251.2`}
+                  strokeDashoffset={`-${(data.finance_analytics?.income_percentage ?? 0) * 2.51}`}
                   strokeLinecap="round"
                 />
               </svg>
               {/* Center text */}
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-2xl font-bold text-gray-900">
-                  {data.finance_analytics.income_percentage.toFixed(0)}%
+                  {(data.finance_analytics?.income_percentage ?? 0).toFixed(0)}%
                 </span>
                 <span className="text-xs text-gray-600">Income Ratio</span>
               </div>
@@ -584,7 +594,7 @@ export default function PaymentAnalyticsPage() {
                   <span className="text-sm text-gray-600">Income</span>
                 </div>
                 <span className="text-sm font-semibold text-gray-900">
-                  {data.finance_analytics.income_percentage.toFixed(1)}%
+                  {(data.finance_analytics?.income_percentage ?? 0).toFixed(1)}%
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -593,7 +603,7 @@ export default function PaymentAnalyticsPage() {
                   <span className="text-sm text-gray-600">Withdrawal</span>
                 </div>
                 <span className="text-sm font-semibold text-gray-900">
-                  {data.finance_analytics.withdrawal_percentage.toFixed(1)}%
+                  {(data.finance_analytics?.withdrawal_percentage ?? 0).toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -603,34 +613,34 @@ export default function PaymentAnalyticsPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Growth Rate</span>
                 <span className={`text-sm font-semibold ${
-                  data.finance_analytics.growth_rate >= 0 ? 'text-green-600' : 'text-red-600'
+                  (data.finance_analytics?.growth_rate ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {formatChange(data.finance_analytics.growth_rate)}
+                  {formatChange(data.finance_analytics?.growth_rate ?? 0)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Month over Month</span>
                 <span className={`text-sm font-semibold ${
-                  data.finance_analytics.month_over_month >= 0 ? 'text-green-600' : 'text-red-600'
+                  (data.finance_analytics?.month_over_month ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {formatChange(data.finance_analytics.month_over_month)}
+                  {formatChange(data.finance_analytics?.month_over_month ?? 0)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Avg Transaction</span>
                 <span className="text-sm font-semibold text-gray-900">
-                  ₦{data.average_transaction.toLocaleString()}
+                  ₦{(data.average_transaction ?? 0).toLocaleString()}
                 </span>
               </div>
             </div>
           </div>
 
           {/* Top Services */}
-          {data.top_services.length > 0 && (
+          {data?.top_services?.length > 0 && (
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Services</h2>
               <div className="space-y-3">
-                {data.top_services.map((service, index) => (
+                {data?.top_services?.map((service, index) => (
                   <div key={service.service_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
@@ -660,10 +670,7 @@ export default function PaymentAnalyticsPage() {
               <ArrowUpRight className="w-5 h-5" />
             </Link>
             
-            <button className="w-full bg-white border-2 border-primary text-primary p-4 rounded-lg hover:bg-blue-50 transition-all flex items-center justify-between">
-              <span className="font-medium">Download Report</span>
-              <Download className="w-5 h-5" />
-            </button>
+
           </div>
         </div>
       </div>

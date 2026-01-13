@@ -47,37 +47,55 @@ export interface ProviderAnalytics {
   total_bookings: number;
   total_revenue: string;
   booking_requests: BookingRequest[];
-  completed_service_performance: ServicePerformance[];
-  discounted_service_performance: Record<string, DiscountGroup>;
-  discounted_services: DiscountedService[];
   revenue_distribution: RevenueDistribution[];
   general_stats: GeneralStats;
 }
 
 export interface AnalyticsFilters {
   year?: number;
-  start_date?: string; // YYYY-MM-DD
-  end_date?: string; // YYYY-MM-DD
+  start_date?: string;
+  end_date?: string;
 }
 
-const log = (label: string, data: any) => {
-  // console.group(`📊 [Provider Analytics] ${label}`);
-  // console.log(data);
-  // console.groupEnd();
-};
+export interface RevenueDistributionFilters {
+  year?: number;
+  limit?: number;
+}
 
 // API Function
 const providerAnalyticsApi = {
   getAnalytics: async (filters?: AnalyticsFilters): Promise<ProviderAnalytics> => {
-    log('Get Analytics Request', filters);
     try {
       const { data } = await apiClient.get('/accounts/provider/analytics/', {
         params: filters,
       });
-      log('Get Analytics Response', data);
       return data;
     } catch (error: any) {
       // console.error('❌ Get Analytics Error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  getGeneralStats: async (filters?: AnalyticsFilters): Promise<GeneralStats> => {
+    try {
+      const { data } = await apiClient.get('/accounts/provider/analytics/general-stats/', {
+        params: filters,
+      });
+      return data;
+    } catch (error: any) {
+      // console.error('❌ Get General Stats Error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  getRevenueDistribution: async (filters?: RevenueDistributionFilters): Promise<RevenueDistribution[]> => {
+    try {
+      const { data } = await apiClient.get('/accounts/provider/analytics/revenue-distribution/', {
+        params: filters,
+      });
+      return data;
+    } catch (error: any) {
+      // console.error('❌ Get Revenue Distribution Error:', error.response?.data || error.message);
       throw error;
     }
   },
@@ -87,8 +105,48 @@ const providerAnalyticsApi = {
 export const useProviderAnalytics = (filters?: AnalyticsFilters) => {
   return useQuery({
     queryKey: ['providerAnalytics', filters],
-    queryFn: () => providerAnalyticsApi.getAnalytics(filters),
-    staleTime: 60000, // 1 minute - adjust based on how often data changes
-    refetchInterval: 300000, // Refetch every 5 minutes
+    queryFn: async () => {
+      // console.log('📊 Fetching analytics with filters:', filters);
+      try {
+        const result = await providerAnalyticsApi.getAnalytics(filters);
+        // console.log('✅ Analytics response:', result);
+        return result;
+      } catch (error) {
+        // console.error('❌ Analytics error:', error);
+        throw error;
+      }
+    },
+    staleTime: 60000,
+    refetchInterval: 300000,
+  });
+};
+
+// General Stats Hook
+export const useGeneralStats = (filters?: AnalyticsFilters) => {
+  return useQuery({
+    queryKey: ['generalStats', filters],
+    queryFn: async () => {
+      // console.log('📊 Fetching general stats with filters:', filters);
+      const result = await providerAnalyticsApi.getGeneralStats(filters);
+      // console.log('✅ General Stats response:', result);
+      return result;
+    },
+    staleTime: 60000,
+    refetchInterval: 300000,
+  });
+};
+
+// Revenue Distribution Hook
+export const useRevenueDistribution = (filters?: RevenueDistributionFilters) => {
+  return useQuery({
+    queryKey: ['revenueDistribution', filters],
+    queryFn: async () => {
+      // console.log('📊 Fetching revenue distribution with filters:', filters);
+      const result = await providerAnalyticsApi.getRevenueDistribution(filters);
+      // console.log('✅ Revenue Distribution response:', result);
+      return result;
+    },
+    staleTime: 60000,
+    refetchInterval: 300000,
   });
 };

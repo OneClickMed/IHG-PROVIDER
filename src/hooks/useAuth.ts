@@ -206,7 +206,9 @@ export const useResendOTP = () => {
   return useMutation({
     mutationFn: authApi.resendOTP,
     onSuccess: (data) => log('useResendOTP Success', data),
-    onError: (error) => console.error('❌ useResendOTP Error:', error),
+    onError: (error) => {
+      // console.error('❌ useResendOTP Error:', error);
+    },
   });
 };
 
@@ -219,7 +221,9 @@ export const useForgotPassword = () => {
       log('useForgotPassword Success', data);
       router.push(`/reset-password?email=${encodeURIComponent(variables.email)}`);
     },
-    onError: (error) => console.error('❌ useForgotPassword Error:', error),
+    onError: (error) => {
+      // console.error('❌ useForgotPassword Error:', error);
+    },
   });
 };
 
@@ -227,7 +231,9 @@ export const useVerifyResetOTP = () => {
   return useMutation({
     mutationFn: authApi.verifyResetOTP,
     onSuccess: (data) => log('useVerifyResetOTP Success', data),
-    onError: (error) => console.error('❌ useVerifyResetOTP Error:', error),
+    onError: (error) => {
+      // console.error('❌ useVerifyResetOTP Error:', error);
+    },
   });
 };
 
@@ -240,7 +246,9 @@ export const useResetPassword = () => {
       log('useResetPassword Success', data);
       router.push('/login?reset=success');
     },
-    onError: (error) => console.error('❌ useResetPassword Error:', error),
+    onError: (error) => {
+      // console.error('❌ useResetPassword Error:', error);
+    },
   });
 };
 
@@ -261,7 +269,9 @@ export const useUpdateProviderProfile = () => {
       log('useUpdateProviderProfile Success', data);
       queryClient.setQueryData(['providerProfile'], data);
     },
-    onError: (error) => console.error('❌ useUpdateProviderProfile Error:', error),
+    onError: (error) => {
+      // console.error('❌ useUpdateProviderProfile Error:', error);
+    },
   });
 };
 

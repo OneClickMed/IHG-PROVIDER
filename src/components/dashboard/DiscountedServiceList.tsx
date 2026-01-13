@@ -8,7 +8,7 @@ interface DiscountedServicesListProps {
 }
 
 export default function DiscountedServicesList({ services }: DiscountedServicesListProps) {
-  if (services.length === 0) {
+  if (services?.length === 0) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Discounted Services</h2>
@@ -22,7 +22,7 @@ export default function DiscountedServicesList({ services }: DiscountedServicesL
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Discounted Services</h2>
 
       <div className="space-y-3">
-        {services.map((service) => (
+        {services?.map((service) => (
           <div
             key={service.id}
             className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"

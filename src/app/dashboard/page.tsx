@@ -1,27 +1,19 @@
 // src/app/(dashboard)/dashboard/page.tsx
 'use client';
-import { useState } from 'react';
 import { useProviderAnalytics } from '@/hooks/useProviderAnalytics';
-import { Search, Video, Plus, SquarePlus, Clock, Wallet, Settings } from 'lucide-react';
+import { SquarePlus, Wallet, Settings } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
-import BookingRequestsTable from '@/components/dashboard/BookingRequestTable';
 import CompletedServiceChart from '@/components/dashboard/CompletdServiceChart';
 import DiscountedServiceChart from '@/components/dashboard/DiscountedServiceChart';
 import RevenueDistributionChart from '@/components/dashboard/RevenueDistributionChart';
 import GeneralStatsChart from '@/components/dashboard/GeneralStatsChart';
-import DiscountedServicesList from '@/components/dashboard/DiscountedServiceList';
 import PageSkeleton from '@/components/ui/PageSkeleton';
+import NotificationPrompt from '@/components/notifications/NotificationPrompt';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
-  
-  const [year, setYear] = useState(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const { data: analytics, isLoading, error } = useProviderAnalytics({ year });
+  const { data: analytics, isLoading, error } = useProviderAnalytics({ year: currentYear });
 
   if (isLoading) {
     return <PageSkeleton type="detail" />;
@@ -76,26 +68,19 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Search Bar and Quick Links */}
+      {/* Notification Prompt */}
+      <NotificationPrompt />
+
+      {/* Quick Links and Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          {/* Search Bar */}
-          <div className="relative mb-6">
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-          </div>
-
-          {/* Booking Requests Table */}
-          <BookingRequestsTable requests={analytics.booking_requests} />
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                  <div className="bg-white rounded-lg border border-gray-200 p-6 h-fit">
+                              <h2 className="text-lg font-semibold text-gray-900 mb-4">Completed Services Stats </h2>
+                              <p className="text-sm text-gray-600 mb-4">Overview of all completed services {currentYear}</p>
+
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <StatCard
               icon="briefcase"
               label="Total listed services"
@@ -105,16 +90,20 @@ export default function DashboardPage() {
             <StatCard
               icon="calendar"
               label="Total service bookings"
-              value={analytics.total_bookings.toLocaleString()}
+              value={analytics.total_bookings?.toLocaleString()}
               trend="up"
             />
             <StatCard
               icon="wallet"
               label="Total Revenue Generated"
-              value={`₦${parseFloat(analytics.total_revenue).toLocaleString()}`}
+              value={`₦${parseFloat(analytics.total_revenue)?.toLocaleString()}`}
               trend="up"
             />
           </div>
+
+                  </div>
+
+
         </div>
 
         {/* Quick Links Sidebar */}
@@ -143,38 +132,21 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Completed Service Chart - Takes 2 columns */}
-        <div className="lg:col-span-2">
-          <CompletedServiceChart
-            data={analytics.completed_service_performance}
-            year={year}
-            onYearChange={setYear}
-          />
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Completed Service Chart */}
+        <CompletedServiceChart />
 
-        {/* Discounted Services List */}
-        <div>
-          <DiscountedServicesList services={analytics.discounted_services} />
-        </div>
+        {/* General Stats */}
+        <GeneralStatsChart />
       </div>
 
       {/* Second Row Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Discounted Service Performance */}
-        <DiscountedServiceChart data={analytics.discounted_service_performance} />
+        <DiscountedServiceChart />
 
-        {/* General Stats */}
-        <GeneralStatsChart
-          data={analytics.general_stats}
-          month={selectedMonth}
-          onMonthChange={setSelectedMonth}
-        />
-      </div>
-
-      {/* Revenue Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RevenueDistributionChart data={analytics.revenue_distribution} />
+        {/* Revenue Distribution */}
+        <RevenueDistributionChart />
       </div>
     </div>
   );

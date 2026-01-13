@@ -79,7 +79,7 @@ export default function BookingRequestsTable({ requests, onRequestUpdate }: Book
     onRequestUpdate?.();
   };
 
-  if (requests.length === 0) {
+  if (requests && requests.length === 0) {
     return (
       <div className="bg-[#5A7A2F] rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
@@ -116,7 +116,7 @@ export default function BookingRequestsTable({ requests, onRequestUpdate }: Book
               </tr>
             </thead>
             <tbody>
-              {requests.map((request, index) => (
+              {requests && requests.map((request, index) => (
                 <tr 
                   key={request.id}
                   className="text-white text-sm border-b border-white/10 last:border-0"

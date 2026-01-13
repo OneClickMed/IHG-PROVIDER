@@ -14,12 +14,14 @@ class ApiClient {
     const session = await getSession();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
+      'X-App-Source': 'provider-app',
+      'ngrok-skip-browser-warning': 'true', // Required for ngrok free tier
     };
-    
+
     if (session?.accessToken) {
       headers['Authorization'] = `Bearer ${session.accessToken}`;
     }
-    
+
     return headers;
   }
 

@@ -3,17 +3,29 @@
 
 import { useState, useEffect } from 'react';
 import { useProviderProfile, useUpdateProviderProfile, type UpdateProviderProfileData } from '@/hooks/useProviderProfile';
-import { Upload, Save, AlertCircle, CheckCircle2, Loader2, ArrowLeft, ToggleLeft } from 'lucide-react';
+import { Upload, Save, AlertCircle, CheckCircle2, Loader2, ArrowLeft, ToggleLeft, Bell } from 'lucide-react';
 import Link from 'next/link';
 import PageSkeleton from '@/components/ui/PageSkeleton';
+import WebPushToggle from '@/components/notifications/WebPushToggle';
 
 export default function ProviderSettingsPage() {
   const { data: profile, isLoading: isLoadingProfile, error: profileError } = useProviderProfile();
   const { mutate: updateProfile, isPending: isUpdating, isSuccess, error: updateError } = useUpdateProviderProfile();
 
-  const [activeTab, setActiveTab] = useState<'availability' | 'basic' | 'contact' | 'branding'>('availability');
+  const [activeTab, setActiveTab] = useState<'availability' | 'basic' | 'contact' | 'branding' | 'notifications'>('availability');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+
+  // Debug: Log on component mount
+  useEffect(() => {
+    /*
+    console.log('🎯 [Settings] Component mounted, initial state:', {
+      profile,
+      isLoading: isLoadingProfile,
+      error: profileError,
+    });
+    */
+  }, []);
 
   // Form state
   const [formData, setFormData] = useState<UpdateProviderProfileData>({
@@ -35,7 +47,27 @@ export default function ProviderSettingsPage() {
 
   // Populate form when profile loads
   useEffect(() => {
-    if (profile) {
+    /*
+    console.log('🔍 [Settings] useEffect triggered, profile state:', {
+      profileExists: !!profile,
+      profileData: profile,
+      isLoading: isLoadingProfile,
+      hasEmail: !!profile?.email,
+      hasOrgName: !!profile?.organization_name,
+    });
+    */
+
+    // Only populate form if we have valid profile data with at least email
+    if (profile && profile.email) {
+      /*
+      console.log('✅ [Settings] Valid profile data loaded, populating form:', {
+        organization_name: profile.organization_name,
+        organization_active: profile.organization_active,
+        email: profile.email,
+        fullProfile: profile,
+      });
+      */
+
       setFormData({
         organization_active: profile.organization_active,
         organization_name: profile.organization_name || '',
@@ -54,8 +86,12 @@ export default function ProviderSettingsPage() {
       if (profile.logo_url) {
         setLogoPreview(profile.logo_url);
       }
+    } else if (profile && !profile.email) {
+      // console.error('❌ [Settings] Profile exists but has no email - invalid data:', profile);
+    } else {
+      // console.warn('⚠️ [Settings] Profile data is not available yet');
     }
-  }, [profile]);
+  }, [profile, isLoadingProfile]);
 
   // Handle success state
   useEffect(() => {
@@ -101,11 +137,18 @@ export default function ProviderSettingsPage() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Validate that profile data is loaded before submission
+    if (!profile) {
+      // console.error('❌ [Settings] Cannot submit - profile data not loaded');
+      return;
+    }
+
     const submitData: UpdateProviderProfileData = { ...formData };
     if (logoFile) {
       submitData.logo = logoFile;
     }
 
+    // console.log('📤 [Settings] Submitting profile update:', submitData);
     updateProfile(submitData);
   };
 
@@ -217,7 +260,34 @@ export default function ProviderSettingsPage() {
           >
             Branding
           </button>
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`flex-1 min-w-max px-6 py-4 text-center font-medium transition-colors ${
+              activeTab === 'notifications'
+                ? 'text-[#005994] border-b-2 border-[#005994]'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <Bell className="w-4 h-4" />
+              Notifications
+            </span>
+          </button>
         </div>
+
+        {/* Notifications Tab */}
+        {activeTab === 'notifications' && (
+          <div className="p-8 space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Notification Settings</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Manage how you receive notifications about bookings, messages, and updates.
+              </p>
+            </div>
+
+            <WebPushToggle />
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-8 space-y-6">

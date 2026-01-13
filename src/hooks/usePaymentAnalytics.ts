@@ -6,6 +6,7 @@ import {
   PaymentStats,
   PaymentAnalyticsParams,
   WithdrawalRequest,
+  PaymentCheckoutResponse,
 } from '@/types/payment';
 
 const log = (label: string, data: any) => {
@@ -51,6 +52,19 @@ const paymentAnalyticsApi = {
       return data;
     } catch (error: any) {
       // console.error('❌ Request Withdrawal Error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Create payment checkout
+  createPaymentCheckout: async (paymentIntents: any[]): Promise<PaymentCheckoutResponse> => {
+    log('Create Payment Checkout', paymentIntents);
+    try {
+      const { data } = await apiClient.post('/payments/checkout/', { payment_intents: paymentIntents });
+      log('Create Payment Checkout Response', data);
+      return data;
+    } catch (error: any) {
+      // console.error('❌ Create Payment Checkout Error:', error.response?.data || error.message);
       throw error;
     }
   },
@@ -120,6 +134,26 @@ export const usePaymentAnalyticsLive = (
     staleTime: refreshInterval / 2,
     refetchInterval: refreshInterval,
     retry: 2,
+  });
+};
+
+/**
+ * Hook to create payment checkout
+ * @returns Mutation function to create payment checkout
+ */
+export const useCreatePaymentCheckout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: paymentAnalyticsApi.createPaymentCheckout,
+    onSuccess: (data) => {
+      log('useCreatePaymentCheckout Success', data);
+      // Invalidate analytics to refresh data
+      queryClient.invalidateQueries({ queryKey: ['paymentAnalytics'] });
+    },
+    onError: (error) => {
+      // console.error('❌ useCreatePaymentCheckout Error:', error);
+    },
   });
 };
 

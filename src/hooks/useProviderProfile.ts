@@ -20,6 +20,7 @@ export interface ProviderProfile {
   logo: string | null;
   logo_url: string | null;
   organization_active: boolean;
+  unread_notifications_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -87,12 +88,26 @@ const updateProviderProfile = async (
 // ===== QUERY HOOK =====
 
 export const useProviderProfile = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['providerProfile'],
     queryFn: fetchProviderProfile,
-    staleTime: 60000,
+    staleTime: 0, // Set to 0 to always consider data stale
     retry: 2,
+    refetchOnMount: 'always', // Always refetch on mount to ensure fresh data
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
+
+  /*
+  console.log('🔍 [useProviderProfile] Query state:', {
+    data: query.data,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isStale: query.isStale,
+    dataUpdatedAt: query.dataUpdatedAt,
+  });
+  */
+
+  return query;
 };
 
 // ===== MUTATION HOOK (WITH IMPROVED SESSION REFRESH) =====
@@ -106,10 +121,12 @@ export const useUpdateProviderProfile = () => {
     onSuccess: async (data) => {
       // Step 1: Update React Query cache immediately
       queryClient.setQueryData(['providerProfile'], data);
-      // console.log('🔄 [Provider Profile] Cache updated with new data:', {
-      //   organization_name: data.organization_name,
-      //   specialty: data.specialty,
-      // });
+      /*
+      console.log('🔄 [Provider Profile] Cache updated with new data:', {
+        organization_name: data.organization_name,
+        specialty: data.specialty,
+      });
+      */
 
       // Step 2: Trigger session refresh
       // This will call the JWT callback on the backend to sync the updated profile
