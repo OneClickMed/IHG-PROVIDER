@@ -1,4 +1,4 @@
-// src/types/payment.ts
+// src/types/payment.ts 
 
 export interface Transaction {
   withdrawal: number | null;
