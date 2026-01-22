@@ -12,7 +12,7 @@ export default function ProviderSettingsPage() {
   const { data: profile, isLoading: isLoadingProfile, error: profileError } = useProviderProfile();
   const { mutate: updateProfile, isPending: isUpdating, isSuccess, error: updateError } = useUpdateProviderProfile();
 
-  const [activeTab, setActiveTab] = useState<'availability' | 'basic' | 'contact' | 'branding' | 'notifications'>('availability');
+  const [activeTab, setActiveTab] = useState<'availability' | 'basic' | 'contact' | 'bank' | 'branding' | 'notifications'>('availability');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
@@ -40,6 +40,9 @@ export default function ProviderSettingsPage() {
     country: '',
     postal_code: '',
     type: '',
+    account_name: '',
+    account_number: '',
+    bank_name: '',
   });
 
   const [showSuccess, setShowSuccess] = useState(false);
@@ -80,6 +83,9 @@ export default function ProviderSettingsPage() {
         country: profile.country || '',
         postal_code: profile.postal_code || '',
         type: profile.type || '',
+        account_name: profile.account_name || '',
+        account_number: profile.account_number || '',
+        bank_name: profile.bank_name || '',
       });
 
       // Set initial logo preview
@@ -144,6 +150,12 @@ export default function ProviderSettingsPage() {
     }
 
     const submitData: UpdateProviderProfileData = { ...formData };
+    const bankLocked = Boolean(profile?.account_name || profile?.account_number || profile?.bank_name);
+    if (bankLocked) {
+      delete submitData.account_name;
+      delete submitData.account_number;
+      delete submitData.bank_name;
+    }
     if (logoFile) {
       submitData.logo = logoFile;
     }
@@ -249,6 +261,16 @@ export default function ProviderSettingsPage() {
             }`}
           >
             Contact Information
+          </button>
+          <button
+            onClick={() => setActiveTab('bank')}
+            className={`flex-1 min-w-max px-6 py-4 text-center font-medium transition-colors ${
+              activeTab === 'bank'
+                ? 'text-[#005994] border-b-2 border-[#005994]'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Bank Details
           </button>
           <button
             onClick={() => setActiveTab('branding')}
@@ -559,6 +581,72 @@ export default function ProviderSettingsPage() {
                     disabled={isUpdating}
                   />
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Bank Details Tab */}
+          {activeTab === 'bank' && (
+            <div className="space-y-6">
+              {(() => {
+                const bankLocked = Boolean(profile?.account_name || profile?.account_number || profile?.bank_name);
+                return (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-900 font-medium">Bank Account Details</p>
+                    <p className="text-xs text-blue-800 mt-1">
+                      {bankLocked
+                        ? 'Bank details are locked and cannot be edited.'
+                        : 'Once added, bank account details cannot be edited.'}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Account Name
+                  </label>
+                  <input
+                    type="text"
+                    name="account_name"
+                    value={formData.account_name || ''}
+                    onChange={handleInputChange}
+                    placeholder="Account holder name"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005994]"
+                    disabled={isUpdating || Boolean(profile?.account_name || profile?.account_number || profile?.bank_name)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Account Number
+                  </label>
+                  <input
+                    type="text"
+                    name="account_number"
+                    value={formData.account_number || ''}
+                    onChange={handleInputChange}
+                    placeholder="Account number"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005994]"
+                    disabled={isUpdating || Boolean(profile?.account_name || profile?.account_number || profile?.bank_name)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Bank Name
+                </label>
+                <input
+                  type="text"
+                  name="bank_name"
+                  value={formData.bank_name || ''}
+                  onChange={handleInputChange}
+                  placeholder="Bank name"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005994]"
+                  disabled={isUpdating || Boolean(profile?.account_name || profile?.account_number || profile?.bank_name)}
+                />
               </div>
             </div>
           )}

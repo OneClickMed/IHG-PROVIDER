@@ -1,6 +1,6 @@
 // src/app/(dashboard)/dashboard/appointments/page.tsx
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
 import { Calendar as CalendarIcon, List, Filter, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useMyAppointments } from '@/hooks/useAppointments';
 import { useSession } from 'next-auth/react';
@@ -9,9 +9,11 @@ import { AppointmentStatus, CalendarAppointment, CalendarDay, Appointment } from
 import Link from 'next/link';
 import AppointmentDetailModal from '@/components/dashboard/AppointmentDetailModal';
 import PageSkeleton from '@/components/ui/PageSkeleton';
+import { useSearchParams } from 'next/navigation';
 
-export default function AppointmentsPage() {
+function AppointmentsPageInner() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTab, setSelectedTab] = useState<'upcoming' | 'past'>('upcoming');
@@ -21,6 +23,7 @@ export default function AppointmentsPage() {
   // Modal state
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [autoOpenedAppointmentId, setAutoOpenedAppointmentId] = useState<number | null>(null);
 
 
 
@@ -137,6 +140,20 @@ export default function AppointmentsPage() {
   const handleActionComplete = () => {
     refetch();
   };
+
+  useEffect(() => {
+    const appointmentIdParam = searchParams.get('appointmentId');
+    if (!appointmentIdParam) return;
+    const appointmentId = Number(appointmentIdParam);
+    if (!Number.isFinite(appointmentId)) return;
+    if (autoOpenedAppointmentId === appointmentId) return;
+    const match = appointments.find((apt) => apt.id === appointmentId);
+    if (match) {
+      setSelectedAppointment(match);
+      setIsModalOpen(true);
+      setAutoOpenedAppointmentId(appointmentId);
+    }
+  }, [appointments, searchParams, autoOpenedAppointmentId]);
 
   // Status badge component
   const StatusBadge = ({ status }: { status: AppointmentStatus }) => {
@@ -436,5 +453,13 @@ export default function AppointmentsPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function AppointmentsPage() {
+  return (
+    <Suspense fallback={<PageSkeleton type="list" />}>
+      <AppointmentsPageInner />
+    </Suspense>
   );
 }

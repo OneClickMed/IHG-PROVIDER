@@ -23,6 +23,9 @@ export interface ProviderProfile {
   unread_notifications_count: number;
   created_at: string;
   updated_at: string;
+  account_name?: string | null;
+  account_number?: string | null;
+  bank_name?: string | null;
 }
 
 export interface UpdateProviderProfileData {
@@ -38,6 +41,9 @@ export interface UpdateProviderProfileData {
   type?: string;
   organization_active?: boolean;
   logo?: File;
+  account_name?: string;
+  account_number?: string;
+  bank_name?: string;
 }
 
 // ===== Fetch Provider Profile =====

@@ -29,6 +29,7 @@ export interface Service {
   rating_count: number;
   discount_percentage_display: number;
   active_discount: Discount | null;
+  availability_set?: boolean;
   available: boolean;
   status: 'ACTIVE' | 'INACTIVE';
   created_at: string;
@@ -40,6 +41,8 @@ export interface Service {
 export type ServiceCategory =
   | 'CONSULTATION'
   | 'DIAGNOSTICS_LAB'
+  | 'RADIOLOGY'
+  | 'ULTRA_SOUND'
   | 'PHARMACY_MEDIC'
   | 'WELLNESS'
   | 'CRITICAL_CARE'

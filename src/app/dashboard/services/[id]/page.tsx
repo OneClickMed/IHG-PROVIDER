@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
   ChevronLeft,
@@ -98,7 +98,8 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab, ratingCount }) => 
 export default function ServiceDetailsPage({ params }: ServiceDetailsPageProps) {
   const router = useRouter();
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState<'overview' | 'ratings' | 'availability' | 'discount'>('overview');
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [serviceId, setServiceId] = useState<string>('');
 
   // Modal states
@@ -116,6 +117,13 @@ export default function ServiceDetailsPage({ params }: ServiceDetailsPageProps) 
       setServiceId(resolvedParams.id);
     });
   }, [params]);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'overview' || tab === 'availability' || tab === 'ratings' || tab === 'discount') {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const { data: service, isLoading, error, isError } = useService(serviceId);
 
@@ -222,7 +230,7 @@ export default function ServiceDetailsPage({ params }: ServiceDetailsPageProps) 
   return (
     <div className="space-y-6">
       {/* Main Container */}
-      <div className="bg-white rounded-2xl border border-gray-300 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-300 overflow-visible">
         {/* Header Section */}
         <div className="px-8 pt-6 pb-4 border-b border-gray-200">
           <div className="flex items-center justify-between flex-wrap gap-4">

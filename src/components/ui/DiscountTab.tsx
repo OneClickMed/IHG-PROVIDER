@@ -169,10 +169,10 @@ export default function DiscountTab({
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Discount Management</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Create and manage discounts for this service. Discount periods cannot overlap.
+            A standard 12% discount is applied automatically. You can increase the value, but it cannot be less than 12%.
           </p>
         </div>
-        <div>
+        {/* <div>
           <Button
             variant="filled"
             onClick={handleCreateDiscount}
@@ -180,7 +180,7 @@ export default function DiscountTab({
             color="#005994"
             logo={<Plus className="w-4 h-4" />}
           />
-        </div>
+        </div> */}
       </div>
 
 
@@ -191,10 +191,9 @@ export default function DiscountTab({
           <div className="text-sm text-gray-900">
             <p className="font-medium mb-1">Discount Rules</p>
             <ul className="list-disc list-inside space-y-1 text-gray-800">
-              <li>You can have multiple discounts, but their active periods cannot overlap</li>
-              <li>Percentage discounts: 0-100%</li>
-              <li>Fixed discounts: Must be less than service price (₦{servicePrice?.toLocaleString()})</li>
-              <li>To reduce service price, first deactivate or modify conflicting fixed discounts</li>
+              <li>A minimum 12% discount is applied to all services</li>
+              <li>You can increase the discount percentage above 12%</li>
+              <li>Discount periods cannot overlap</li>
             </ul>
           </div>
         </div>
@@ -312,7 +311,7 @@ export default function DiscountTab({
           <p className="text-gray-600 mb-6">
             Create your first discount to attract more customers.
           </p>
-          <div className="w-48 mx-auto">
+          {/* <div className="w-48 mx-auto">
             <Button
               variant="filled"
               onClick={handleCreateDiscount}
@@ -320,7 +319,7 @@ export default function DiscountTab({
               color="#005994"
               logo={<Plus className="w-4 h-4" />}
             />
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -379,13 +378,14 @@ function DiscountModal({
   const createDiscount = useCreateDiscount();
   const updateDiscount = useUpdateDiscount();
 
-const [formData, setFormData] = useState({
-  discount_type: discount?.discount_type || 'PERCENTAGE',
-  value: discount?.value || '',
-  is_active: discount?.is_active ?? true,
-  start_date: discount?.start_date || '',
-  end_date: discount?.end_date || '',
-});
+  const initialDiscountType = isEdit ? 'PERCENTAGE' : (discount?.discount_type || 'PERCENTAGE');
+  const [formData, setFormData] = useState({
+    discount_type: initialDiscountType,
+    value: discount?.value || '',
+    is_active: discount?.is_active ?? true,
+    start_date: discount?.start_date || '',
+    end_date: discount?.end_date || '',
+  });
 
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -434,8 +434,8 @@ const [formData, setFormData] = useState({
       const numValue = parseFloat(formData.value);
       if (isNaN(numValue)) {
         newErrors.value = 'Value must be a number';
-      } else if (formData.discount_type === 'PERCENTAGE' && (numValue < 0 || numValue > 100)) {
-        newErrors.value = 'Percentage must be between 0 and 100';
+      } else if (formData.discount_type === 'PERCENTAGE' && (numValue < 12 || numValue > 100)) {
+        newErrors.value = 'Percentage must be between 12 and 100';
       } else if (formData.discount_type === 'FIXED') {
         if (numValue < 0) {
           newErrors.value = 'Fixed amount cannot be negative';
@@ -552,12 +552,12 @@ const [formData, setFormData] = useState({
               name="discount_type"
               value={formData.discount_type}
               onChange={handleChange}
+              disabled={isEdit}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#005994] focus:border-transparent transition-all ${
                 errors.discount_type ? 'border-red-500' : 'border-gray-300'
               }`}
             >
               <option value="PERCENTAGE">Percentage (%)</option>
-              <option value="FIXED">Fixed Amount (₦)</option>
             </select>
             {errors.discount_type && (
               <p className="text-red-600 text-sm mt-1">{errors.discount_type}</p>
@@ -580,7 +580,7 @@ const [formData, setFormData] = useState({
               value={formData.value}
               onChange={handleChange}
               step={formData.discount_type === 'PERCENTAGE' ? '0.01' : '0.01'}
-              min="0"
+              min={formData.discount_type === 'PERCENTAGE' ? '12' : '0'}
               max={formData.discount_type === 'PERCENTAGE' ? '100' : maxFixedDiscount.toString()}
               placeholder={
                 formData.discount_type === 'PERCENTAGE' ? 'e.g., 20' : 'e.g., 5000'

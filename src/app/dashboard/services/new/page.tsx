@@ -12,6 +12,8 @@ import Button from '@/components/ui/Button';
 const CATEGORY_OPTIONS: { value: ServiceCategory; label: string }[] = [
   { value: 'CONSULTATION', label: 'Consultation' },
   { value: 'DIAGNOSTICS_LAB', label: 'Diagnostics/Lab' },
+  { value: 'RADIOLOGY', label: 'Radiology' },
+  { value: 'ULTRA_SOUND', label: 'Ultra Sound' },
   { value: 'PHARMACY_MEDIC', label: 'Pharmacy/Medic' },
   { value: 'WELLNESS', label: 'Wellness' },
   { value: 'CRITICAL_CARE', label: 'Critical Care' },
@@ -77,10 +79,6 @@ export default function NewServicePage() {
       newErrors.title = 'Service name is required';
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-
     if (!formData.price || parseFloat(formData.price) <= 0) {
       newErrors.price = 'Please enter a valid price';
     }
@@ -110,8 +108,8 @@ export default function NewServicePage() {
         status: formData.status,
       };
 
-      await createService.mutateAsync(serviceData);
-      router.push('/dashboard/services');
+      const createdService = await createService.mutateAsync(serviceData);
+      router.push(`/dashboard/services/${createdService.id}?tab=availability`);
     } catch (error: any) {
       // console.error('Failed to create service:', error);
       // Handle API errors
@@ -187,7 +185,7 @@ export default function NewServicePage() {
           {/* Description */}
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-              Description <span className="text-red-500">*</span>
+              Description
             </label>
             <textarea
               id="description"
@@ -224,6 +222,7 @@ export default function NewServicePage() {
                 }`}
               />
               {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price}</p>}
+              <PriceDiscountNote price={formData.price} />
             </div>
 
             {/* Appointment Duration */}
@@ -301,6 +300,25 @@ export default function NewServicePage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function PriceDiscountNote({ price }: { price: string }) {
+  const basePrice = Number.parseFloat(price);
+  const isValid = Number.isFinite(basePrice) && basePrice > 0;
+  const discountedPrice = isValid ? basePrice * 0.88 : 0;
+
+  return (
+    <div className="mt-2 text-xs text-gray-600 space-y-1">
+      <p>Automatic minimum 12% discount is applied to all services.</p>
+      {isValid && (
+        <p>
+          New price after discount:{' '}
+          <span className="font-semibold text-gray-900">₦{discountedPrice.toLocaleString()}</span>
+        </p>
+      )}
+      <p>You can always increase the discount in Discount Settings.</p>
     </div>
   );
 }

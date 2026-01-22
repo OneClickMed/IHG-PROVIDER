@@ -45,8 +45,9 @@ export default function WithdrawalDetailsModal({ withdrawalId, onClose }: Withdr
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
+      <div className="fixed inset-0 z-50">
+        <div className="absolute left-1/2 top-1/2 w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-h-[90vh] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
             <div>
@@ -257,6 +258,7 @@ export default function WithdrawalDetailsModal({ withdrawalId, onClose }: Withdr
             >
               Close
             </button>
+          </div>
           </div>
         </div>
       </div>

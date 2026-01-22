@@ -15,6 +15,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useProviderServices, useDeleteService, useToggleServiceStatus } from '@/hooks/useServices';
+import apiClient from '@/lib/api-client';
 import { Service, ServiceCategory } from '@/types/service';
 import Button from '@/components/ui/Button';
 import FilterSelect from '@/components/ui/FilterSelect';
@@ -36,6 +37,12 @@ export default function ServicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [showFilters, setShowFilters] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const [bulkErrorDetails, setBulkErrorDetails] = useState<string[]>([]);
+  const [bulkSuccess, setBulkSuccess] = useState<string | null>(null);
+  const [bulkUploading, setBulkUploading] = useState(false);
   
   // Filter state
   const [tempFilters, setTempFilters] = useState<FilterState>({
@@ -125,6 +132,81 @@ export default function ServicesPage() {
     setTempFilters(emptyFilters);
     setAppliedFilters(emptyFilters);
     setCurrentPage(1);
+  };
+
+  const resetBulkModal = () => {
+    setBulkFile(null);
+    setBulkError(null);
+    setBulkErrorDetails([]);
+    setBulkSuccess(null);
+    setBulkUploading(false);
+  };
+
+  const getBulkErrorDetails = (data: any) => {
+    if (!data || !Array.isArray(data.errors)) return [];
+    const messages: string[] = [];
+    for (const item of data.errors) {
+      if (!item || typeof item !== 'object') continue;
+      const row = item.row ?? 'Unknown';
+      const errors = item.errors ?? {};
+      const fields = Object.keys(errors);
+      for (const field of fields) {
+        const fieldErrors = Array.isArray(errors[field]) ? errors[field] : [errors[field]];
+        for (const message of fieldErrors) {
+          messages.push(`Row ${row}: ${field} - ${message}`);
+        }
+      }
+    }
+    return messages.slice(0, 3);
+  };
+
+  const getBulkErrorMessage = (error: any) => {
+    const data = error?.response?.data;
+    if (typeof data === 'string') return data;
+    if (data?.error) return data.error;
+    if (data?.message) return data.message;
+    if (data?.detail) return data.detail;
+    if (Array.isArray(data?.non_field_errors) && data.non_field_errors.length > 0) {
+      return data.non_field_errors[0];
+    }
+    return 'Failed to upload file. Please try again.';
+  };
+
+  const handleBulkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBulkError(null);
+    setBulkErrorDetails([]);
+    setBulkSuccess(null);
+
+    if (!bulkFile) {
+      setBulkError('Please select a file to upload.');
+      return;
+    }
+
+    try {
+      setBulkUploading(true);
+      const formData = new FormData();
+      formData.append('file', bulkFile);
+
+      const { data } = await apiClient.post('/services/bulk-upload/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const createdCount = data?.created_count ?? 0;
+      const errorCount = data?.error_count ?? 0;
+      setBulkSuccess(`Bulk upload completed. Created ${createdCount} service(s).`);
+      if (errorCount > 0) {
+        setBulkErrorDetails(getBulkErrorDetails(data));
+      }
+      setBulkFile(null);
+    } catch (error: any) {
+      const data = error?.response?.data;
+      setBulkError(getBulkErrorMessage(error));
+      const details = getBulkErrorDetails(data);
+      if (details.length > 0) setBulkErrorDetails(details);
+    } finally {
+      setBulkUploading(false);
+    }
   };
 
   const openPauseModal = (serviceId: number, currentStatus: string) => {
@@ -227,6 +309,18 @@ export default function ServicesPage() {
                   color="#005994"
                 />
               </div>
+              <div className="flex-1 sm:flex-initial sm:w-52">
+                <Button
+                  variant="outline"
+                  size="medium"
+                  onClick={() => {
+                    resetBulkModal();
+                    setShowBulkModal(true);
+                  }}
+                  title="Bulk Add Services"
+                  color="#005994"
+                />
+              </div>
               <div className="flex-1 sm:flex-initial sm:w-32">
                 <Button
                   variant="filled"
@@ -299,6 +393,46 @@ export default function ServicesPage() {
                       </svg>
                     </div>
                     <span className="text-sm text-gray-700 group-hover:text-gray-900">Diagnostics/Lab</span>
+                  </label>
+
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={tempFilters.categories.has('RADIOLOGY')}
+                        onChange={() => toggleCategoryFilter('RADIOLOGY')}
+                        className="peer w-5 h-5 border-2 border-gray-300 rounded cursor-pointer appearance-none checked:bg-[#005994] checked:border-[#005994] transition-all hover:border-[#005994]"
+                      />
+                      <svg
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-white pointer-events-none hidden peer-checked:block"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-sm text-gray-700 group-hover:text-gray-900">Radiology</span>
+                  </label>
+
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={tempFilters.categories.has('ULTRA_SOUND')}
+                        onChange={() => toggleCategoryFilter('ULTRA_SOUND')}
+                        className="peer w-5 h-5 border-2 border-gray-300 rounded cursor-pointer appearance-none checked:bg-[#005994] checked:border-[#005994] transition-all hover:border-[#005994]"
+                      />
+                      <svg
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-white pointer-events-none hidden peer-checked:block"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-sm text-gray-700 group-hover:text-gray-900">Ultra Sound</span>
                   </label>
 
                   <label className="flex items-center gap-3 cursor-pointer group">
@@ -496,6 +630,128 @@ export default function ServicesPage() {
           )}
         </div>
 
+        {showBulkModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setShowBulkModal(false)} />
+            <div className="relative bg-white rounded-xl shadow-xl w-full max-w-4xl p-6">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Bulk Add Services</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Download the template, fill in your services, then upload the file for processing.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowBulkModal(false)}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+                  title="Close"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleBulkSubmit} className="space-y-4 text-sm text-gray-700">
+                <div className="rounded-lg border border-gray-200 p-4 bg-white">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload completed template
+                  </label>
+                  <input
+                    type="file"
+                    accept=".xlsx"
+                    onChange={(e) => setBulkFile(e.target.files?.[0] ?? null)}
+                    className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Accepted file type: .xlsx</p>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+                  <p className="font-semibold text-gray-900 mb-2">Instructions</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Use the provided template and keep the column headers unchanged.</li>
+                    <li>Maximum 100 services per upload.</li>
+                    <li>Category must be one of the accepted values below (exact match).</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="font-semibold text-gray-900 mb-2">Column Meanings</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs text-gray-600">
+                    <li>title (required): service name, e.g. MRI Brain Scan</li>
+                    <li>
+                      category (required): must match one of the codes; invalid values are auto-set to OTHERS.
+                    </li>
+                    <li>price (required): numeric amount, e.g. 15000 or 15000.00</li>
+                    <li>description (optional): free text, can be blank</li>
+                    <li>appointment_duration (optional): minutes, integer like 30 or 60</li>
+                    <li>status (optional): ACTIVE or INACTIVE (default is ACTIVE if blank)</li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="font-semibold text-gray-900 mb-2">Accepted Categories</p>
+                  <p className="text-xs text-gray-600">
+                    CONSULTATION, DIAGNOSTICS_LAB, PHARMACY_MEDIC, WELLNESS, CRITICAL_CARE, TELEHEALTH, SUPPORTIVE,
+                    REFERRALS, RADIOLOGY, ULTRA_SOUNDS, OTHERS
+                  </p>
+                </div>
+                {bulkError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {bulkError}
+                  </div>
+                )}
+                {bulkErrorDetails.length > 0 && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                    <p className="font-semibold mb-1">First 3 errors:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {bulkErrorDetails.map((detail, index) => (
+                        <li key={`${detail}-${index}`}>{detail}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {bulkSuccess && (
+                  <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                    {bulkSuccess}
+                  </div>
+                )}
+
+                {bulkUploading && (
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+                    Upload in progress. Your file is being processed...
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-3 mt-2">
+                  <a
+                    href="/bulk_upload_template.xlsx"
+                    download
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Download Template
+                  </a>
+                  <button
+                    type="submit"
+                    disabled={!bulkFile || bulkUploading}
+                    className="px-4 py-2 text-sm font-medium text-white bg-[#005994] rounded-lg hover:bg-[#004070] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {bulkUploading ? 'Uploading...' : 'Submit File'}
+                  </button>
+                </div>
+              </form>
+
+              <div className="flex items-center justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Services Table Container with inner border */}
         <div className="mx-8 mb-8 overflow-hidden">
           <div className="overflow-x-auto">
@@ -521,7 +777,7 @@ export default function ServicesPage() {
                     Bookings
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Discount
+                    Availability Set
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     View Patient Details
@@ -568,7 +824,7 @@ export default function ServicesPage() {
                         {service.rating_count || 0}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-center">
-                        {service.has_active_discount ? 'Yes' : 'No'}
+                        {service.availability_set ? 'Yes' : 'No'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         <button

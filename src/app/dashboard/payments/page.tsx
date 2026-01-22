@@ -132,11 +132,7 @@ const WithdrawalRow = ({ withdrawal }: { withdrawal: Withdrawal }) => {
           </span>
         </div>
       </td>
-      <td className="px-4 py-3">
-        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-          View details
-        </button>
-      </td>
+
     </tr>
   );
 };
@@ -477,7 +473,7 @@ export default function PaymentAnalyticsPage() {
                   </div>
 
 
-                  <Link href="/dashboard/withdraw" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  <Link href="/dashboard/payments/withdraw" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                     View All
                   </Link>
                 </div>
@@ -492,7 +488,6 @@ export default function PaymentAnalyticsPage() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Time</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Amount</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Action</th>
                     </tr>
                   </thead>
                   <tbody>

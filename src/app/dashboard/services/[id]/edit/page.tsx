@@ -13,6 +13,8 @@ import PageSkeleton from '@/components/ui/PageSkeleton';
 const CATEGORY_OPTIONS: { value: ServiceCategory; label: string }[] = [
   { value: 'CONSULTATION', label: 'Consultation' },
   { value: 'DIAGNOSTICS_LAB', label: 'Diagnostics/Lab' },
+  { value: 'RADIOLOGY', label: 'Radiology' },
+  { value: 'ULTRA_SOUND', label: 'Ultra Sound' },
   { value: 'PHARMACY_MEDIC', label: 'Pharmacy/Medic' },
   { value: 'WELLNESS', label: 'Wellness' },
   { value: 'CRITICAL_CARE', label: 'Critical Care' },
