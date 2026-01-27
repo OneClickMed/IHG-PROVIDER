@@ -188,7 +188,7 @@ export default function ServicesPage() {
       const formData = new FormData();
       formData.append('file', bulkFile);
 
-      const { data } = await apiClient.post('/services/bulk-upload/', formData, {
+      const { data } = await apiClient.post('/services/services/bulk-upload/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
