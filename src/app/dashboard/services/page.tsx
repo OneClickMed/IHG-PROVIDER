@@ -181,7 +181,7 @@ export default function ServicesPage() {
     if (!bulkFile) {
       setBulkError('Please select a file to upload.');
       return;
-    }
+    } 
 
     try {
       setBulkUploading(true);
