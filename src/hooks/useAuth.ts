@@ -219,6 +219,7 @@ export const useForgotPassword = () => {
     mutationFn: authApi.forgotPassword,
     onSuccess: (data, variables) => {
       log('useForgotPassword Success', data);
+      localStorage.setItem('resetPasswordRequestedAt', String(Date.now()));
       router.push(`/reset-password?email=${encodeURIComponent(variables.email)}`);
     },
     onError: (error) => {

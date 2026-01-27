@@ -69,9 +69,10 @@ export const authApi = {
 
   // Reset password with OTP
   resetPassword: async (email: string, code: string, newPassword: string) => {
+    const body = { email, code, new_password: newPassword };
     return apiClient.request('/api/accounts/reset-password/', {
       method: 'POST',
-      body: JSON.stringify({ email, code, new_password: newPassword }),
+      body: JSON.stringify(body),
     });
   },
 
