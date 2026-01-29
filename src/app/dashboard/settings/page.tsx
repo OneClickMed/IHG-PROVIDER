@@ -8,6 +8,46 @@ import Link from 'next/link';
 import PageSkeleton from '@/components/ui/PageSkeleton';
 import WebPushToggle from '@/components/notifications/WebPushToggle';
 
+const NIGERIAN_STATES = [
+  'Abia',
+  'Adamawa',
+  'Akwa Ibom',
+  'Anambra',
+  'Bauchi',
+  'Bayelsa',
+  'Benue',
+  'Borno',
+  'Cross River',
+  'Delta',
+  'Ebonyi',
+  'Edo',
+  'Ekiti',
+  'Enugu',
+  'Federal Capital Territory',
+  'Gombe',
+  'Imo',
+  'Jigawa',
+  'Kaduna',
+  'Kano',
+  'Katsina',
+  'Kebbi',
+  'Kogi',
+  'Kwara',
+  'Lagos',
+  'Nasarawa',
+  'Niger',
+  'Ogun',
+  'Ondo',
+  'Osun',
+  'Oyo',
+  'Plateau',
+  'Rivers',
+  'Sokoto',
+  'Taraba',
+  'Yobe',
+  'Zamfara',
+];
+
 export default function ProviderSettingsPage() {
   const { data: profile, isLoading: isLoadingProfile, error: profileError } = useProviderProfile();
   const { mutate: updateProfile, isPending: isUpdating, isSuccess, error: updateError } = useUpdateProviderProfile();
@@ -454,9 +494,7 @@ export default function ProviderSettingsPage() {
                 >
                   <option value="">Select a type</option>
                   <option value="INDIVIDUAL">Individual</option>
-                  <option value="ORGANIZATION">Organization</option>
-                  <option value="CLINIC">Clinic</option>
-                  <option value="HOSPITAL">Hospital</option>
+                  <option value="INSTITUTION">Institution</option>
                 </select>
               </div>
 
@@ -540,15 +578,20 @@ export default function ProviderSettingsPage() {
                   <label className="block text-sm font-medium text-gray-900 mb-2">
                     State / Province
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="state"
                     value={formData.state}
                     onChange={handleInputChange}
-                    placeholder="NY"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005994]"
                     disabled={isUpdating}
-                  />
+                  >
+                    <option value="">Select a state</option>
+                    {NIGERIAN_STATES.map(state => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
