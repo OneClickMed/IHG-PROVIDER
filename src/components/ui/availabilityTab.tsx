@@ -1,8 +1,8 @@
 // src/components/services/AvailabilityTab.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Trash2, Clock, AlertCircle, Check, Layers } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Trash2, Clock, AlertCircle, Check, Layers, Loader2 } from 'lucide-react';
 import {
   useTimeSlotsByService,
   useCreateTimeSlot,
@@ -125,6 +125,63 @@ export default function AvailabilityTab({ serviceId, appointmentDuration }: Avai
   const [applyLoading, setApplyLoading] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applySuccess, setApplySuccess] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const dayOrder = useMemo(() => {
+    const order: Record<DayOfWeek, number> = {
+      MONDAY: 0,
+      TUESDAY: 1,
+      WEDNESDAY: 2,
+      THURSDAY: 3,
+      FRIDAY: 4,
+      SATURDAY: 5,
+      SUNDAY: 6,
+    };
+    return order;
+  }, []);
+
+  const normalizeSlots = (
+    slots: Array<{ day_of_week: string; start_time: string; end_time: string }>
+  ) => {
+    return slots
+      .filter((slot) => DAYS_OF_WEEK.includes(slot.day_of_week as DayOfWeek))
+      .map((slot) => ({
+        day_of_week: slot.day_of_week as DayOfWeek,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+      }))
+      .sort((a, b) => {
+        const dayDelta = dayOrder[a.day_of_week] - dayOrder[b.day_of_week];
+        if (dayDelta !== 0) return dayDelta;
+        const startDelta = a.start_time.localeCompare(b.start_time);
+        if (startDelta !== 0) return startDelta;
+        return a.end_time.localeCompare(b.end_time);
+      });
+  };
+
+  const hasUnsavedChanges = useMemo(() => {
+    const currentSlots: Array<{ day_of_week: string; start_time: string; end_time: string }> = [];
+    const orderedActiveDays = Array.from(activeDays).sort(
+      (a, b) => dayOrder[a] - dayOrder[b]
+    );
+
+    for (const day of orderedActiveDays) {
+      for (const slot of daySlots[day]) {
+        currentSlots.push({
+          day_of_week: day,
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+        });
+      }
+    }
+
+    const normalizedCurrent = normalizeSlots(currentSlots);
+    const normalizedServer = normalizeSlots(
+      Array.isArray(timeSlots) ? timeSlots : []
+    );
+
+    return JSON.stringify(normalizedCurrent) !== JSON.stringify(normalizedServer);
+  }, [activeDays, dayOrder, daySlots, timeSlots]);
 
   useEffect(() => {
     if (timeSlots && Array.isArray(timeSlots) && timeSlots.length > 0) {
@@ -256,25 +313,8 @@ export default function AvailabilityTab({ serviceId, appointmentDuration }: Avai
     return 'Failed to apply availability. Please try again.';
   };
 
-  const handleApplyToCategory = async () => {
-    setApplyError(null);
-    setApplySuccess(null);
-    setApplyLoading(true);
-
-    try {
-      await apiClient.post('/service-time-slots/apply-to-category/', {
-        service_id: serviceId,
-      });
-      setApplySuccess('Availability applied to all services in this category.');
-      setApplyModalOpen(false);
-    } catch (error: any) {
-      setApplyError(getApplyErrorMessage(error));
-    } finally {
-      setApplyLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
+  const saveAvailability = async (options?: { suppressAlerts?: boolean }) => {
+    setIsSaving(true);
     const promises: Promise<any>[] = [];
 
     for (const day of Array.from(activeDays)) {
@@ -324,10 +364,48 @@ export default function AvailabilityTab({ serviceId, appointmentDuration }: Avai
 
     try {
       await Promise.all(promises);
-      alert('Availability saved successfully!');
+      if (!options?.suppressAlerts) {
+        alert('Availability saved successfully!');
+      }
+      return true;
     } catch (error) {
-      alert('Failed to save availability. Please try again.');
+      if (!options?.suppressAlerts) {
+        alert('Failed to save availability. Please try again.');
+      }
+      return false;
+    } finally {
+      setIsSaving(false);
     }
+  };
+
+  const handleApplyToCategory = async () => {
+    setApplyError(null);
+    setApplySuccess(null);
+    setApplyLoading(true);
+
+    try {
+      if (hasUnsavedChanges) {
+        const saved = await saveAvailability({ suppressAlerts: true });
+        if (!saved) {
+          setApplyError('Failed to save availability. Please try again.');
+          return;
+        }
+      }
+
+      await apiClient.post('/service-time-slots/apply-to-category/', {
+        service_id: serviceId,
+      });
+      setApplySuccess('Availability applied to all services in this category.');
+      setApplyModalOpen(false);
+    } catch (error: any) {
+      setApplyError(getApplyErrorMessage(error));
+    } finally {
+      setApplyLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    await saveAvailability();
   };
 
   const calculateSlotCount = (startTime: string, endTime: string): number => {
@@ -398,24 +476,38 @@ export default function AvailabilityTab({ serviceId, appointmentDuration }: Avai
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 justify-end">
-          <div className="w-full sm:w-64">
-            <Button
-              variant="outline"
-              onClick={() => setApplyModalOpen(true)}
-              title="Apply To Category"
-              logo={<Layers className="w-4 h-4" />}
-              color="#005994"
-            />
-          </div>
-          <div className="w-full sm:w-44">
-            <Button
-              variant="filled"
-              onClick={handleSave}
-              title="Save Availability"
-              color="#005994"
-              disabled={createTimeSlot.isPending || updateTimeSlot.isPending || deleteTimeSlot.isPending}
-            />
-          </div>
+          {(() => {
+            const isMutating =
+              isSaving ||
+              applyLoading ||
+              createTimeSlot.isPending ||
+              updateTimeSlot.isPending ||
+              deleteTimeSlot.isPending;
+            return (
+              <>
+                <div className="w-full sm:w-64">
+                  <Button
+                    variant="outline"
+                    onClick={() => setApplyModalOpen(true)}
+                    title={applyLoading ? 'Applying...' : 'Apply To Category'}
+                    logo={applyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />}
+                    color="#005994"
+                    disabled={isMutating}
+                  />
+                </div>
+                <div className="w-full sm:w-44">
+                  <Button
+                    variant="filled"
+                    onClick={handleSave}
+                    title={isSaving ? 'Saving...' : 'Save Availability'}
+                    logo={isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
+                    color="#005994"
+                    disabled={isMutating}
+                  />
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
 
