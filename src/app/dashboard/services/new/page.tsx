@@ -311,7 +311,7 @@ function PriceDiscountNote({ price }: { price: string }) {
 
   return (
     <div className="mt-2 text-xs text-gray-600 space-y-1">
-      <p>Automatic minimum 12% discount is applied to all services.</p>
+      <p>Automatic minimum 10% discount is applied to all services.</p>
       {isValid && (
         <p>
           New price after discount:{' '}

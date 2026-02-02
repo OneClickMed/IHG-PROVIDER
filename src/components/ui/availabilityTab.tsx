@@ -392,7 +392,7 @@ export default function AvailabilityTab({ serviceId, appointmentDuration }: Avai
         }
       }
 
-      await apiClient.post('/service-time-slots/apply-to-category/', {
+      await apiClient.post('/bookings/provider-customers/apply-to-category/', {
         service_id: serviceId,
       });
       setApplySuccess('Availability applied to all services in this category.');

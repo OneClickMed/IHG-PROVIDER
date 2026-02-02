@@ -169,7 +169,7 @@ export default function DiscountTab({
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Discount Management</h2>
           <p className="text-sm text-gray-600 mt-1">
-            A standard 12% discount is applied automatically. You can increase the value, but it cannot be less than 12%.
+            A standard 10% discount is applied automatically. You can increase the value, but it cannot be less than 10%.
           </p>
         </div>
         {/* <div>
@@ -191,8 +191,8 @@ export default function DiscountTab({
           <div className="text-sm text-gray-900">
             <p className="font-medium mb-1">Discount Rules</p>
             <ul className="list-disc list-inside space-y-1 text-gray-800">
-              <li>A minimum 12% discount is applied to all services</li>
-              <li>You can increase the discount percentage above 12%</li>
+              <li>A minimum 10% discount is applied to all services</li>
+              <li>You can increase the discount percentage above 10%</li>
               <li>Discount periods cannot overlap</li>
             </ul>
           </div>

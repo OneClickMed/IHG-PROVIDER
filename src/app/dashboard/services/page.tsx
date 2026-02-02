@@ -1,7 +1,7 @@
 // src/app/(dashboard)/dashboard/services/page.tsx
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -20,7 +20,6 @@ import { Service, ServiceCategory } from '@/types/service';
 import Button from '@/components/ui/Button';
 import FilterSelect from '@/components/ui/FilterSelect';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
-import PageSkeleton from '@/components/ui/PageSkeleton';
 
 type FilterState = {
   categories: Set<ServiceCategory>;
@@ -33,6 +32,7 @@ export default function ServicesPage() {
   const providerId = session?.user?.profileId;
 
   // State
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -90,10 +90,22 @@ export default function ServicesPage() {
   const endIndex = Math.min(currentPage * rowsPerPage, totalServices);
 
   // Handlers
-  const handleSearch = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
-  };
+  useEffect(() => {
+    const trimmed = searchInput.trim();
+    if (trimmed.length === 0) {
+      setSearchQuery('');
+      setCurrentPage(1);
+      return;
+    }
+    if (trimmed.length < 2) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      setSearchQuery(trimmed);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const toggleCategoryFilter = (category: ServiceCategory) => {
     setTempFilters(prev => {
@@ -256,10 +268,6 @@ export default function ServicesPage() {
     router.push(`/dashboard/services/${serviceId}`);
   };
 
-  if (isLoading) {
-    return <PageSkeleton type="list" />;
-  }
-
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -276,6 +284,7 @@ export default function ServicesPage() {
         <div className="px-8 pt-6 pb-4">
           <div className="flex items-center gap-3 mb-6">
             <button
+              type="button"
               onClick={() => router.back()}
               className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
             >
@@ -291,8 +300,8 @@ export default function ServicesPage() {
               <input
                 type="text"
                 placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full pl-4 pr-10 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005994] focus:border-[#005994] text-sm hover:border-gray-400 transition-colors"
               />
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#005994]" />
@@ -342,6 +351,7 @@ export default function ServicesPage() {
                   Select one or more categories to show
                 </h3>
                 <button
+                  type="button"
                   onClick={() => setShowFilters(false)}
                   className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                   title="Close filters"
@@ -603,6 +613,7 @@ export default function ServicesPage() {
               {/* Filter Actions */}
               <div className="flex justify-between items-center mt-6">
                 <button
+                  type="button"
                   onClick={resetFilters}
                   className="text-[#005994] text-sm font-medium hover:underline transition-all"
                 >
@@ -610,12 +621,14 @@ export default function ServicesPage() {
                 </button>
                 <div className="flex gap-3">
                   <button
+                    type="button"
                     onClick={() => setShowFilters(false)}
                     className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                   >
                     Close
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       applyFilters();
                       setShowFilters(false);
@@ -691,7 +704,7 @@ export default function ServicesPage() {
                   <p className="font-semibold text-gray-900 mb-2">Accepted Categories</p>
                   <p className="text-xs text-gray-600">
                     CONSULTATION, DIAGNOSTICS_LAB, PHARMACY_MEDIC, WELLNESS, CRITICAL_CARE, TELEHEALTH, SUPPORTIVE,
-                    REFERRALS, RADIOLOGY, ULTRA_SOUNDS, OTHERS
+                    REFERRALS, RADIOLOGY, ULTRA_SOUND, OTHERS
                   </p>
                 </div>
                 {bulkError && (
@@ -788,7 +801,39 @@ export default function ServicesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {filteredServices?.length === 0 ? (
+                {isLoading ? (
+                  Array.from({ length: 6 }).map((_, index) => (
+                    <tr key={`skeleton-${index}`} className="animate-pulse">
+                      <td className="px-4 py-3">
+                        <div className="h-4 w-6 bg-gray-200 rounded" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-4 w-40 bg-gray-200 rounded" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-4 w-24 bg-gray-200 rounded" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-4 w-20 bg-gray-200 rounded" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-4 w-16 bg-gray-200 rounded" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-4 w-10 bg-gray-200 rounded mx-auto" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-4 w-12 bg-gray-200 rounded mx-auto" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-4 w-24 bg-gray-200 rounded" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-6 w-24 bg-gray-200 rounded" />
+                      </td>
+                    </tr>
+                  ))
+                ) : filteredServices?.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-4 py-12 text-center text-gray-500">
                       No services found
@@ -871,6 +916,7 @@ export default function ServicesPage() {
           </div>
 
           {/* Pagination */}
+{!isLoading && (
 <div className="w-full py-4 bg-white border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
   <div className="flex items-center gap-2 whitespace-nowrap">
     <div className="text-sm text-gray-600">Rows per page:</div>
@@ -910,6 +956,7 @@ export default function ServicesPage() {
     </div>
   </div>
 </div>
+)}
 
         </div>
       </div>
